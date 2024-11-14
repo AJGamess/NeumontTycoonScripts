@@ -1,0 +1,121 @@
+local CollectionService = game:GetService('CollectionService')
+local ReplicatedStorage = game:GetService('ReplicatedStorage')
+
+local Items = ReplicatedStorage:WaitForChild('Items')
+local Tycoons = game.Workspace:WaitForChild('Tycoons')
+local Players = game:GetService("Players")
+
+local PlacerholderTycoon = ReplicatedStorage:WaitForChild('Tycoon')
+
+
+
+local function assignTycoon(player)
+	for _, Tycoon in Tycoons:GetChildren() do
+		if Tycoon:GetAttribute("Taken") then continue end
+		Tycoon:SetAttribute("Taken", true)
+		Tycoon:SetAttribute("UserId", player.UserId)
+		return Tycoon
+	end
+end
+
+game.Players.PlayerAdded:Connect(function(player)
+
+	local Tycoon = assignTycoon(player)
+	if not Tycoon then warn ("Could not assign tycoon to ".. player.Name) return end
+
+	local leaderstats = Instance.new("Folder")
+	leaderstats.Name= "leaderstats"
+	leaderstats.Parent = player
+
+	local cash = Instance.new("IntValue")
+	cash.Name = "Cash"
+	cash.Value = 1000000000
+	cash.Parent = leaderstats
+
+end)
+
+
+for _, Tycoon in CollectionService:GetTagged('Tycoon') do
+	if Tycoon:IsDescendantOf(ReplicatedStorage) then continue end
+	Tycoon.Items:ClearAllChildren()
+end
+
+
+local function getTycoon(player)
+	for _, tycoon in game.Workspace.Tycoons:GetChildren() do
+		if tycoon:GetAttribute('UserId') == player.UserId then
+			return tycoon
+		end
+	end
+end
+
+local function getItem(itemId)
+	for _, Item in Items:GetChildren() do
+		if Item:GetAttribute('ItemId') == itemId then
+			return Item
+		end
+	end
+end
+
+local function getItemInTycoonById(itemId)
+	for _, Item in PlacerholderTycoon.Items:GetChildren('Tycoon') do
+		if Item:GetAttribute('ItemId') == itemId then
+			return Item
+		end
+	end
+end
+
+local function getRelativeCFrame(itemID)
+	local Item = getItemInTycoonById(itemID)
+
+	local relativeCF = PlacerholderTycoon.PrimaryPart.CFrame:ToObjectSpace(Item:GetPivot())
+	return relativeCF
+end
+
+local function unlockItem(player, itemId)
+	local tycoon = getTycoon(player)
+	if not tycoon then return end
+
+	local Item = getItem(itemId):Clone()
+	local Cost = Item:GetAttribute('Cost')
+
+	if player.leaderstats.Cash.Value < Cost then
+		return false
+	end
+
+	player.leaderstats.Cash.Value -= Cost
+
+	local RelativeCF = getRelativeCFrame(itemId)
+
+	local WorldCF = tycoon.PrimaryPart.CFrame:toWorldSpace(RelativeCF)
+
+	Item:PivotTo(WorldCF)
+	Item.Parent = tycoon.Items	
+
+	return true
+end
+
+for _, Button in CollectionService:GetTagged('Button') do
+	local ItemId = Button:GetAttribute('ItemId')
+	local Item = getItem(ItemId)
+
+	--Button.Touched:Connect(function(hit)
+	Button.Touched:Connect(function(hit)
+		if Button:GetAttribute('Unlocked') then return end
+
+		local player = game.Players:GetPlayerFromCharacter(hit.Parent)
+		if not player then return end
+		local tycoon = getTycoon(player)
+		if not tycoon then return end
+
+		if not Button:IsDescendantOf(tycoon) then return end
+
+		local success = unlockItem(player, Button:GetAttribute('ItemId'))
+		if not success then return end
+
+		--Button.Transparency = 1
+		Button:Destroy()
+		Button.BillboardGui.Enabled = false
+		Button:SetAttribute('Unlocked', true)
+	end)
+end
