@@ -1,0 +1,21 @@
+local Owner = script.Parent.Parent.Parent.Parent:GetAttribute("UserId")
+
+function onTouched(hit)
+	local humanoid = hit.Parent:FindFirstChild("Humanoid")
+	local player = game.Players:GetPlayerFromCharacter(hit.Parent)
+	if player.UserId == Owner then
+		script.Parent.Transparency = 0.5
+		script.Parent.CanCollide = false
+		print("Works!")
+		wait(1)
+		script.Parent.Transparency = 0
+		script.Parent.CanCollide = true
+	else
+		if (humanoid ~= nil) then
+			humanoid.Health = 0
+		end
+	end
+end
+script.Parent.Part1.Touched:Connect(onTouched)
+script.Parent.Part2.Touched:Connect(onTouched)
+script.Parent.Part3.Touched:Connect(onTouched)
