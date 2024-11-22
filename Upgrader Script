@@ -1,0 +1,8 @@
+script.Parent.Upgrader.Touched:connect(function(Part)
+	if Part:GetAttribute('CashValue') then
+		--Part.Cash.Value = Part.Cash.Value + 5 -- Try not to use * because if the game lags, parts may be worth millions each due to debounce
+		local Upgrade = script.Parent:GetAttribute('UpgradeValue')
+		local Increase = Part:GetAttribute('CashValue') + Upgrade
+		Part:SetAttribute('CashValue', Increase)
+	end
+end)
