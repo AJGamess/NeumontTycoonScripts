@@ -1,0 +1,17 @@
+script.Parent.Touched:Connect(function(hit)
+	if hit:GetAttribute('CashValue') then
+		local Tycoon = script.Parent.Parent.Parent.Parent
+
+		if not Tycoon then warn('No Tycoon') return end
+
+		local OwnerId = Tycoon:GetAttribute('UserId')
+
+		if not OwnerId then warn ('No Owner') return end
+
+		hit:Destroy()
+
+		-- found tycoon owner
+		local PlayerObject = game.Players:GetPlayerByUserId(OwnerId)
+		PlayerObject.leaderstats.Cash.Value += hit:GetAttribute('CashValue')
+	end
+end)
