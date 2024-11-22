@@ -1,12 +1,18 @@
 local CollectionService = game:GetService('CollectionService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
+-- HI IM BOB
+
+-- Hello BOB
+
 local Items = ReplicatedStorage:WaitForChild('Items')
 local Tycoons = game.Workspace:WaitForChild('Tycoons')
+local Buttons = ReplicatedStorage:WaitForChild('Buttons')
 local Players = game:GetService("Players")
 
-local PlacerholderTycoon = ReplicatedStorage:WaitForChild('Tycoon')
 
+
+local PlacerholderTycoon = ReplicatedStorage:WaitForChild('Tycoon')
 
 
 local function assignTycoon(player)
@@ -29,7 +35,7 @@ game.Players.PlayerAdded:Connect(function(player)
 
 	local cash = Instance.new("IntValue")
 	cash.Name = "Cash"
-	cash.Value = 1000000000
+	cash.Value = 50
 	cash.Parent = leaderstats
 
 end)
@@ -38,6 +44,7 @@ end)
 for _, Tycoon in CollectionService:GetTagged('Tycoon') do
 	if Tycoon:IsDescendantOf(ReplicatedStorage) then continue end
 	Tycoon.Items:ClearAllChildren()
+	Tycoon.Buttons:ClearAllChildren()
 end
 
 
@@ -95,13 +102,32 @@ local function unlockItem(player, itemId)
 	return true
 end
 
+local function unlockButton(player, NextButtonId)
+	--Get Button from Replicated Storage
+	local tycoon = getTycoon(player)
+	if not tycoon then return end
+
+	for _, button in Buttons:GetChildren() do
+		if button:GetAttribute('ItemId') == NextButtonId then
+			button:Clone()
+			
+			local relativeCF = PlacerholderTycoon.PrimaryPart.CFrame:ToObjectSpace(button:GetPivot())
+
+			local WorldCF = tycoon.PrimaryPart.CFrame:toWorldSpace(relativeCF)
+
+			button:PivotTo(WorldCF)
+			button.Parent = tycoon.Buttons	
+		end
+	end
+end
+
 for _, Button in CollectionService:GetTagged('Button') do
 	local ItemId = Button:GetAttribute('ItemId')
+	local NextButtonId = Button:GetAttribute('NextButtonId')
 	local Item = getItem(ItemId)
 
 	--Button.Touched:Connect(function(hit)
 	Button.Touched:Connect(function(hit)
-		if Button:GetAttribute('Unlocked') then return end
 
 		local player = game.Players:GetPlayerFromCharacter(hit.Parent)
 		if not player then return end
@@ -115,7 +141,42 @@ for _, Button in CollectionService:GetTagged('Button') do
 
 		--Button.Transparency = 1
 		Button:Destroy()
-		Button.BillboardGui.Enabled = false
-		Button:SetAttribute('Unlocked', true)
+		
+		for _, Button2 in CollectionService:GetTagged('Button') do
+			local NextButton = Button2:GetAttribute('ItemId')
+			if not NextButton then return end
+
+			unlockButton(player, NextButtonId)
+			
+		end
+		
 	end)
 end
+
+--game.Players.PlayerRemoving:Connect(function(player)
+	--local userId = player.UserId
+
+	-- Get all tycoons tagged with "Tycoon"
+	--local taggedTycoons = CollectionService:GetTagged("Tycoon")
+
+	--for _, tycoon in taggedTycoons do
+		-- Check if the tycoon belongs to the player
+		--if tycoon:GetAttribute("UserId") == userId then
+			-- Reset the tycoon
+			--for _, child in tycoon:GetChildren() do
+				--child:Destroy()
+			--end
+			-- Or, if you want to replace it with a default:
+			--tycoon:SetAttribute("UserId", nil)
+			--local defaultTycoon = ReplicatedStorage.Tycoon
+			-- Your default tycoon template
+			--local newTycoon = defaultTycoon:Clone()
+			--newTycoon.Parent = tycoon.Parent
+		--end
+	--end
+--end)
+
+
+
+
+
